@@ -1,277 +1,511 @@
-#ifndef _STACK_
-#define _STACK_
+#ifndef _ARRAY_LIST_
+#define _ARRAY_LIST_
+
 #include <iostream>
 #include <fstream>
 using namespace std;
 
+template <class T1>
+class TArrayListIterator;
+
 template <class T>
-class TStack
+class TArrayList
 {
 protected:
-	int length;
 	T* data;
-	int top;
-	bool f;
+	int* links;
+	int size;
+	int count;
+	int root;
 public:
-	TStack(int size = 1, bool _f = true);
-	TStack(TStack<T>& _v);
-	~TStack();
+	TArrayList(int _size = 1);
+	TArrayList(TArrayList<T>& _v);
+	~TArrayList();
 
-	TStack<T>& operator =(TStack<T>& _v);
+	TArrayList<T>& operator =(TArrayList<T>& _v);
 
-	void Push(T d); 
-	void SetData(T* _x, int size, int _top);
-	void Resize(int _size);
-	T Get(); 
-	int IsEmpty(void) const; 
-	int IsFull(void) const; 
-	int GetSize();
+	void InsFirst(T d); 
+	void InsLast(T d); 
+	void Ins(TArrayListIterator<T>& e, T d); 
+	bool IsFull(void) const; 
+	bool IsEmpty(void) const; 
+
+	TArrayListIterator<T> Begin();
+	TArrayListIterator<T> End();
+
+	void DelFirst();
+	void DelLast();
+
+	T GetFirst();
+	T GetLast();
+
+	void Del(TArrayListIterator<T>& e);
 	int GetCount();
+
+
 	
-	inline int min_elem(); 
-	inline int max_elem(); 
-
+	void file();
+	TArrayList<T> Divide(int _k);
 
 	template <class T1>
-	friend ostream& operator<< (ostream& ostr, const TStack<T1>& A);
+	friend ostream& operator<< (ostream& ostr, const TArrayList<T1>& A);
 	template <class T1>
-	friend istream& operator >> (istream& istr, TStack<T1>& A);
+	friend istream& operator >> (istream& istr, TArrayList<T1>& A);
+
+	template <class T1>
+	friend class TArrayListIterator;
 };
 
+template <class T>
+class TArrayListIterator
+{
+protected:
+	TArrayList<T>& list;
+	int index;
+public:
+	TArrayListIterator(TArrayList<T>& _list, int _index = -2);
+	TArrayListIterator(TArrayListIterator<T>& _v);
+	~TArrayListIterator();
+
+	bool IsGoNext();
+	void GoNext();
+
+	bool operator == (const TArrayListIterator<T>& _v);
+	TArrayListIterator<T>& operator ++ ();
+	TArrayListIterator<T>& operator =(const TArrayListIterator<T>& _v);
+
+	T GetData();
+	T GetIndex();
+};
+
+
 template <class T1>
-ostream& operator<< (ostream& ostr, const TStack<T1>& A) {
-	for (int i = 0; i < A.top; i++) {
-		ostr << A.data[i] << endl;
+ostream& operator<< (ostream& ostr, const TArrayList<T1>& A)
+{
+	int i = A.root;
+	while (A.links[i] != -1)
+	{
+		ostr << A.data[i] << " ";
+		i = A.links[i];
 	}
 	return ostr;
 }
 
 template <class T1>
-istream& operator >> (istream& istr, TStack<T1>& A) {
+istream& operator >> (istream& istr, TArrayList<T1>& A)
+{
 	int count;
 	istr >> count;
-	for (int i = 0; i < A.count; i++) {
+	for (int i = 0; i < count; i++)
+	{
 		T1 d;
 		istr >> d;
-		A.Push(d);
+		A.InsLast(d);
 	}
 	return istr;
 }
 
 template<class T>
-inline TStack<T>::TStack(int size, bool _f)
+inline TArrayList<T>::TArrayList(int _size)
 {
-	if (size > 0)
+	if (_size <= 0)
 	{
-		this->length = size;
-		this->f = _f;
-		if (f)
-		{
-			data = new T[length];
-			for (int i = 0; i < length; i++)
-			{
-				data[i] = 0;
-			}
-		}
-		this->top = 0;
+		throw "Error";
 	}
-	else
+	size = _size;
+
+	data = new T[size];
+	links = new int[size];
+	count = 0;
+
+	for (int i = 0; i < size; i++)
 	{
-		throw logic_error("Error");
+		links[i] = -2;
+	}
+
+	root = -1;
+}
+
+template <class T>
+TArrayList<T>::TArrayList(TArrayList<T>& _v)
+{
+	count = _v.count;
+	size = _v.size;
+	root = _v.root;
+
+	data = new T[size];
+	links = new int[size];
+
+	for (int i = 0; i < size; i++)
+	{
+		links[i] = _v.links[i];
+		data[i] = _v.data[i];
 	}
 }
 
 template <class T>
-TStack<T>::TStack(TStack<T>& _v)
+TArrayList<T>::~TArrayList()
 {
-	length = _v.length;
-	top = _v.top;
-	f = _v.f;
-	if (f)
+	if (data != 0)
 	{
-		data = new T[length];
-		for (int i = 0; i < length; i++)
-		{
-			data[i] = _v.data[i];
-		}
+		delete[] data;
+		delete[] links;
+		data = 0;
+		links = 0;
+		count = 0;
+		size = 0;
+		root = -1;
 	}
-	else
-	{
-		data = _v.data;
-	}
-
 }
 
 template <class T>
-TStack<T>::~TStack()
-{
-	length = 0;
-	if (f)
-	{
-		if (data != NULL)
-		{
-			delete[] data;
-			data = 0;
-		}
-	}
-}
-
-
-template<typename T>
-inline int TStack<T>::max_elem()
-{
-	T res = data[0];
-	for (int i = 1; i < length; i++)
-	{
-		if (data[i] > res)
-		{
-			res = data[i];
-		}
-	}
-	return res;
-}
-
-template<typename T>
-inline int TStack<T>::min_elem()
-{
-	T res = data[0];
-	for (int i = 1; i < length; i++)
-	{
-		if (data[i] < res)
-		{
-			res = data[i];
-		}
-	}
-	return res;
-}
-
-
-template <class T>
-TStack<T>& TStack<T>::operator =(TStack<T>& _v)
+TArrayList<T>& TArrayList<T>::operator =(TArrayList<T>& _v)
 {
 	if (this == &_v)
 		return *this;
 
-	this->length = _v.length;
-	f = _v.f;
-
-	if (f)
+	if (size != _v.size)
 	{
-		if (data != NULL)
-		{
-			delete[] data;
-		}
-		this->data = new T[length];
+		delete[] data;
+		delete[] links;
 
-		for (int i = 0; i < length; i++)
-		{
-			data[i] = _v.data[i];
-		}
-	}
-	else
-	{
-		data = _v.data;
+		data = new T[_v.size];
+		links = new int[_v.size];
 	}
 
-	this->top = _v.top;
+	count = _v.count;
+	size = _v.size;
+	root = _v.root;
+
+	for (int i = 0; i < size; i++)
+	{
+		links[i] = _v.links[i];
+		data[i] = _v.data[i];
+	}
+
 	return *this;
 }
 
 template<class T>
-inline void TStack<T>::Push(T d)
+inline void TArrayList<T>::InsFirst(T d)
 {
-	if (top - 1 > length)
+	if (this->IsFull())
 	{
 		throw "Error";
 	}
 
-	data[top] = d;
-	top++;
-}
-
-template<class T>
-inline void TStack<T>::SetData(T* _x, int size, int _top)
-{
-	if (f)
+	int i = 0;
+	for (i = 0; i < size; i++)
 	{
-		if (data != NULL)
+		if (links[i] == -2)
 		{
-			delete[] data;
+			break;
 		}
-		this->length = size;
-		f = false;
-		data = _x;
-		top = _top;
 	}
+	data[i] = d;
+	links[i] = root;
+	root = i;
+	count++;
 }
 
 template<class T>
-inline void TStack<T>::Resize(int _size)
+inline void TArrayList<T>::InsLast(T d)
 {
-	if (_size <= 0)
+	if (this->IsFull())
 	{
-		throw logic_error("Error");
+		throw "Error";
 	}
-
-	if (data == NULL)
+	if (this->IsEmpty())
 	{
-		delete[] data;
-		data = new T[_size];
+		root = 0;
+		data[0] = d;
+		links[0] = -1;
 	}
-
 	else
 	{
-		T* temp = new T[_size];
-
-		for (int i = 0; i < this->GetCount(); i++)
+		int i = 0;
+		for (i = 0; i < size; i++)
 		{
-			temp[i] = Get();
+			if (links[i] == -2)
+			{
+				break;
+			}
 		}
 
-		delete[] data;
-
-		data = new T[_size];
-
-		for (int i = 0; i < 1; i++)
+		int end = root;
+		while (links[end] != -1)
 		{
-			data[i] = temp[i];
+			end = links[end];
 		}
+		data[i] = d;
+		links[i] = -1;
+		links[end] = i;
 	}
+	count++;
 }
 
 template<class T>
-inline T TStack<T>::Get()
+inline void TArrayList<T>::Ins(TArrayListIterator<T>& e, T d)
 {
-	if (top <= 0)
+	if (this->IsFull())
 	{
-		throw logic_error("Error");
+		throw "Error";
+	}
+	if (this->IsEmpty())
+	{
+		root = 0;
+		data[0] = d;
+		links[0] = -1;
+	}
+	else
+	{
+		int temp = e.GetIndex();
+		if (links[temp] == -2)
+		{
+			int end = root;
+			while (links[end] != -1)
+			{
+				end = links[end];
+			}
+			data[temp] = d;
+			links[temp] = -1;
+			links[end] = temp;
+		}
+	}
+	count++;
+}
+
+template<class T>
+inline bool TArrayList<T>::IsFull(void) const
+{
+	return count >= size;
+}
+
+template<class T>
+inline bool TArrayList<T>::IsEmpty(void) const
+{
+	return count == 0;
+}
+
+template<class T>
+inline void TArrayList<T>::DelFirst()
+{
+	if (this->IsEmpty())
+	{
+		throw "Error";
+	}
+	int i = root;
+	root = links[root];
+	links[i] = -2;
+	count--;
+}
+
+template<class T>
+inline void TArrayList<T>::DelLast()
+{
+	if (this->IsEmpty())
+	{
+		throw "Error";
 	}
 
-	T d = data[top - 1];
-	top--;
-	return d;
+	if (links[root] == -1)
+	{
+		links[root] = -2;
+		root = -1;
+	}
+	else
+	{
+		int pEnd = root;
+		int end = links[root];
+
+		while (links[end] != -1)
+		{
+			pEnd = end;
+			end = links[end];
+		}
+
+		links[pEnd] = -1;
+		links[end] = -2;
+	}
+	count--;
 }
 
 template<class T>
-inline int TStack<T>::IsEmpty(void) const
+inline T TArrayList<T>::GetFirst()
 {
-	return (top == 0);
+	if (this->IsEmpty())
+	{
+		throw "error";
+	}
+	return data[root];
 }
 
 template<class T>
-inline int TStack<T>::IsFull(void) const
+inline T TArrayList<T>::GetLast()
 {
-	return (top - 1 > length);
+	if (this->IsEmpty())
+	{
+		throw "error";
+	}
+
+	int end = root;
+	while (links[end] != -1)
+	{
+		end = links[end];
+	}
+	return data[end];
+}
+
+template<class T>
+inline void TArrayList<T>::Del(TArrayListIterator<T>& e)
+{
+	if (this->IsEmpty())
+	{
+		throw "Error";
+	}
+
+	if (links[root] == -1)
+	{
+		links[root] = -2;
+		root = -1;
+	}
+	else
+	{
+		int pEnd = e.GetIndex();
+		int end = links[root];
+
+		while (links[end] != -1)
+		{
+			pEnd = end;
+			end = links[end];
+		}
+
+		links[pEnd] = -1;
+		links[end] = -2;
+	}
+	count--;
+}
+
+template<class T>
+inline int TArrayList<T>::GetCount()
+{
+	return count;
+}
+template<class T>
+inline void TArrayList<T>::file()
+{
+	ofstream outf("Data.txt");
+	if (!outf)
+	{
+		throw "Error file";
+	}
+
+	for (int i = 0; i < this->size; i++)
+	{
+		outf << this->data[i] << " ";
+	}
 }
 
 template <class T>
-int TStack<T>::GetSize()
+TArrayList<T> TArrayList<T>::Divide(int _k)
 {
-	return length;
+	int size_temp = this->size;
+	TArrayList<T> temp(size_temp);
+
+	for (int i = 0; i < this->size; i++)
+	{
+		if (this->data[i] % _k == 0)
+		{
+			temp.InsFirst(this->data[i]);
+		}
+	}
+	return temp;
 }
+
+
+#endif
+
 template<class T>
-inline int TStack<T>::GetCount()
+inline TArrayListIterator<T> TArrayList<T>::Begin()
 {
-	return top;
+	return TArrayListIterator<T>(*this, this->root);
 }
-#endif 
+
+template<class T>
+inline TArrayListIterator<T> TArrayList<T>::End()
+{
+	return TArrayListIterator<T>(*this, -1);
+}
+
+
+template<class T>
+inline TArrayListIterator<T>::TArrayListIterator(TArrayList<T>& _list, int _index) : list(_list)
+{
+	this->index = _index;
+}
+
+template<class T>
+inline TArrayListIterator<T>::TArrayListIterator(TArrayListIterator<T>& _v) : list(_v.list), index(_v.index)
+{
+}
+
+template<class T>
+inline TArrayListIterator<T>::~TArrayListIterator()
+{
+	index = -2;
+}
+
+template<class T>
+inline bool TArrayListIterator<T>::IsGoNext()
+{
+	return (index >= 0);
+}
+
+template<class T>
+inline void TArrayListIterator<T>::GoNext()
+{
+	if (IsGoNext())
+	{
+		index = list.links[index];
+	}
+}
+
+template<class T>
+inline bool TArrayListIterator<T>::operator==(const TArrayListIterator<T>& _v)
+{
+	return (index == _v.index && *list == *(_v.list));
+}
+
+template<class T>
+inline TArrayListIterator<T>& TArrayListIterator<T>::operator++()
+{
+	GoNext();
+	return *this;
+}
+
+template<class T>
+inline TArrayListIterator<T>& TArrayListIterator<T>::operator=(const TArrayListIterator<T>& _v)
+{
+	list = _v.list;
+	index = _v.index;
+}
+
+template<class T>
+inline T TArrayListIterator<T>::GetData()
+{
+	if (index < 0)
+	{
+		throw "Error";
+	}
+	return list.data[index];
+}
+
+template<class T>
+inline T TArrayListIterator<T>::GetIndex()
+{
+	if (index < 0)
+	{
+		throw "Error";
+	}
+	return index;
+}
